@@ -1,0 +1,1462 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Кибердетектив — 3 дела</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100..900;1,100..900&display=swap');
+        * {
+            user-select: none;
+            touch-action: manipulation;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: linear-gradient(145deg, #0a1f1a 0%, #05100c 100%);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            font-family: "Roboto", sans-serif;
+            margin: 0;
+            padding: 12px;
+        }
+        h1 {
+            font-size: 50px;
+            color:#d4af37;
+            text-shadow: 0 0 15px #ffd700bf;
+            text-transform: uppercase;
+            position: relative;
+            z-index: 1;
+        }
+        h1::before{
+            content: url("lupa.svg");
+            position: relative;
+            top: 40px;
+            left: -30px;
+            z-index: 0;
+            font-size: 60px;
+        }
+
+        .game-wrapper {
+            width: 100%;
+            max-width: 1200px;
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .game-container {
+            background: #2c3e2f;
+            border-radius: 48px;
+            padding: 16px;
+            box-shadow: 0 20px 35px rgba(0,0,0,0.5), inset 0 1px 4px rgba(255,255,255,0.2);
+            width: 70%;
+            position: relative;
+            overflow: hidden;
+        }
+
+        canvas {
+            display: block;
+            margin: 0 auto;
+            border-radius: 32px;
+            box-shadow: 0 0 0 6px #d4af37, 0 15px 30px black;
+            cursor: pointer;
+            width: 100%;
+            height: auto;
+            background: #b87c4f;
+            touch-action: none;
+            transition: filter 0.3s ease;
+        }
+        
+        .canvas-blur {
+            filter: blur(6px);
+        }
+
+        .right-panel {
+            transform: translateY(-50%);
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            z-index: 100;
+        }
+
+        .sound-toggle {
+            background: #2b2b1f;
+            border: 2px solid #d4af37;
+            border-radius: 50px;
+            padding: 12px 16px;
+            cursor: pointer;
+            font-size: 1.2rem;
+            font-weight: bold;
+            transition: 0.2s;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+            text-align: center;
+            color: white;
+        }
+
+        .sound-toggle:hover {
+            transform: scale(1.05);
+            background: #3b3b2f;
+        }
+
+        .sound-toggle:active {
+            transform: scale(0.95);
+        }
+
+        .overlay-start {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(8px);
+            z-index: 1000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            transition: 0.3s;
+        }
+
+        .start-button {
+            background: linear-gradient(135deg, #d4af37, #b8902a);
+            border: none;
+            font-size: 2rem;
+            font-weight: bold;
+            padding: 20px 50px;
+            border-radius: 60px;
+            cursor: pointer;
+            color: #1a2a1a;
+            box-shadow: 0 10px 0 #8b5a2b;
+            transition: 0.1s;
+            font-family: inherit;
+            text-align: center;
+        }
+
+        .start-button:active {
+            transform: translateY(5px);
+            box-shadow: 0 5px 0 #8b5a2b;
+        }
+
+        .loading-container {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .loading-bar {
+            width: 300px;
+            height: 30px;
+            background: #2b2b1f;
+            border-radius: 30px;
+            overflow: hidden;
+            border: 2px solid #d4af37;
+        }
+
+        .loading-progress {
+            width: 0%;
+            height: 100%;
+            background: linear-gradient(90deg, #d4af37, #f5bc70);
+            border-radius: 30px;
+            transition: width 0.1s linear;
+        }
+
+        .loading-text {
+            font-size: 1.3rem;
+            color: #ffecb3;
+            font-weight: bold;
+        }
+
+        .info-panel {
+            margin-top: 16px;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            background: #1e2a2a;
+            padding: 10px 20px;
+            border-radius: 60px;
+            color: #f9e7b3;
+            font-weight: bold;
+        }
+
+        .score-box, .lives-box {
+            background: #000000aa;
+            backdrop-filter: blur(4px);
+            padding: 6px 18px;
+            border-radius: 40px;
+            font-size: 1.4rem;
+            letter-spacing: 1px;
+            white-space: nowrap;
+        }
+
+        .message-area {
+            background: #2b2b1f;
+            padding: 6px 16px;
+            border-radius: 32px;
+            font-size: 1rem;
+            color: #ffecb3;
+            text-align: center;
+            flex: 1;
+            min-width: 150px;
+            font-family: 'Roboto', monospace;
+            min-height: 60px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        button {
+            background: #f5bc70;
+            border: none;
+            font-size: 1.2rem;
+            font-weight: bold;
+            padding: 10px 24px;
+            border-radius: 60px;
+            cursor: pointer;
+            transition: 0.1s linear;
+            font-family: inherit;
+            box-shadow: 0 5px 0 #8b5a2b;
+            touch-action: manipulation;
+        }
+
+        button:active {
+            transform: translateY(3px);
+            box-shadow: 0 2px 0 #8b5a2b;
+        }
+
+        .cases-sidebar {
+            display: flex;
+            flex-direction: row;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .case-btn {
+            background: linear-gradient(135deg, #3a5a4a, #1e3a2a);
+            border: 2px solid #d4af37;
+            color: #ffecb3;
+            font-size: 1.6rem;
+            padding: 12px 24px;
+            min-width: 140px;
+            box-shadow: 0 6px 0 #0f2a1a;
+            transition: 0.1s;
+            font-weight: bold;
+        }
+
+        .case-btn:active {
+            transform: translateY(3px);
+            box-shadow: 0 2px 0 #0f2a1a;
+        }
+
+        .case-btn.active {
+            background: linear-gradient(135deg, #d4af37, #b8902a);
+            color: #1a2a1a;
+            border-color: white;
+            box-shadow: 0 0 15px gold;
+        }
+        .case-btn span{
+            font-size: 1rem;
+        }
+        .single-button-panel {
+            display: flex;
+            justify-content: center;
+            margin-top: 20px;
+        }
+
+        .single-button-panel button {
+            min-width: 200px;
+            font-size: 1.3rem;
+            padding: 14px 30px;
+            background: #4f7a5c;
+            box-shadow: 0 5px 0 #2b4a35;
+            color: white;
+        }
+
+        .save-badge {
+            background: #2b4f3f;
+            border-radius: 40px;
+            padding: 4px 16px;
+            font-size: 0.7rem;
+            color: #ffd966;
+            text-align: center;
+            margin-top: 12px;
+        }
+
+        .case-indicator {
+            background: #d4af37;
+            color: #1a2a1a;
+            padding: 4px 16px;
+            border-radius: 40px;
+            font-weight: bold;
+            font-size: 0.9rem;
+        }
+
+        .voice-btn {
+            background: #6c5c3a;
+            box-shadow: 0 4px 0 #3a2a1a;
+            padding: 6px 16px;
+            font-size: 0.9rem;
+        }
+        
+        .message-area2 {
+            position: absolute;
+            background: rgba(43, 43, 31, 0.85) !important;
+            color: wheat;
+            width: 90%;
+            padding: 15px;
+            bottom: 130px;
+            left: 40px;
+            display: block;
+            border-radius: 16px;
+            font-family: 'Roboto', sans-serif;
+            backdrop-filter: blur(4px);
+            z-index: 50;
+            font-size: 0.95rem;
+            line-height: 1.4;
+        }
+
+        /* АНИМАЦИЯ ПЕРЕХОДА МЕЖДУ ДЕЛАМИ */
+        .board-wrapper {
+            position: relative;
+            overflow: hidden;
+            border-radius: 32px;
+        }
+        
+        .board-canvas {
+            transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.4s ease;
+            will-change: transform, opacity;
+        }
+        
+        .board-canvas.slide-out {
+            transform: translateX(120%);
+            opacity: 0;
+        }
+        
+        .board-canvas.slide-in {
+            transform: translateX(0);
+            opacity: 1;
+        }
+        
+        .board-canvas.init-hidden {
+            transform: translateX(120%);
+            opacity: 0;
+        }
+
+        @media (max-width: 800px) {
+            .right-panel {
+                position: static;
+                transform: none;
+                flex-direction: row;
+                justify-content: center;
+                margin-top: 10px;
+            }
+            .score-box, .lives-box { font-size: 1rem; padding: 4px 12px; }
+            .message-area { font-size: 0.8rem; }
+            .case-btn { padding: 8px 16px; font-size: 0.9rem; min-width: 100px; }
+            .start-button { font-size: 1.2rem; padding: 15px 30px; }
+            .loading-bar { width: 250px; }
+            .message-area2 { 
+                /* display: none; */
+                font-size: 0.8rem;
+                 padding: 10px;
+                  bottom: 170px;
+                   left: 0;
+                    right: 0;
+                    margin: auto;}
+    .game-wrapper{
+            flex-direction: column;
+        }
+        h1 {
+    font-size: 30px;
+        }
+            h1::before {
+        content: "";
+        height: 50px;
+        width: 50px;
+        background: url(lupa.svg) no-repeat;
+        background-size: cover;
+        position: absolute;
+        top: -10px;
+        left: -65px;
+        z-index: 0;
+        font-size: 60px;
+    }
+    .cases-sidebar {
+    flex-direction: column;
+        gap: 5px;
+}
+.game-container {
+    width: 100%;
+}
+.single-button-panel,
+.right-panel,
+.cases-sidebar {
+    margin-top: 5px;
+}
+
+
+
+    .board-wrapper {
+        transform: scale(1.1);
+        border-radius: 0;
+    }
+    .game-container{
+    padding: 3px;
+}
+#verdictPanel{
+    gap:7px !important;
+}
+.none-message {
+    display: none !important;
+}
+        }
+    
+
+        @media (min-width: 1000px) {
+            .cases-sidebar {
+                flex-direction: column;
+                margin-bottom: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <h1>Кибердетектив</h1>
+<div class="game-wrapper">
+    <div class="cases-sidebar" id="casesSidebar">
+        <button class="case-btn" data-case="1">📱 Дело №1<br><span style="font-weight:normal;">Похищенный аккаунт</span></button>
+        <button class="case-btn" data-case="2">💀 Дело №2<br><span style="font-weight:normal;">Вирус-вымогатель</span></button>
+        <button class="case-btn" data-case="3">💔 Дело №3<br><span style="font-weight:normal;">Кибербуллинг</span></button>
+    </div>
+
+    <div class="game-container">
+        <div class="board-wrapper">
+            <canvas id="gameCanvas" width="1000" height="600" style="width:100%; height:auto; max-width:1000px; aspect-ratio:1000/600" class="board-canvas canvas-blur"></canvas>
+        </div>
+        
+        <div class="message-area2" id="robotMessage2"></div>
+        <div class="info-panel">
+            <div class="case-indicator" id="caseName">Дело №1</div>
+            <div class="score-box">🔍 УЛИКИ: <span id="foundCount">0</span> / <span id="totalErrors">3</span></div>
+            <div class="message-area" id="robotMessage">👮‍♂️ Выберите дело из списка слева</div>
+            <div class="lives-box">❤️ <span id="lives">3</span></div>
+            
+        </div>
+    </div>
+   <div class="right-panel">
+            <div id="soundToggle" class="sound-toggle" style="cursor: pointer;">
+                🔊 ВКЛ
+            </div>
+            <button id="voiceIntroBtn" class="voice-btn">🔊 Озвучка</button>
+        </div> 
+    
+</div>
+<div class="single-button-panel">
+        <button id="mobileResetBtn">🔄 НОВАЯ ИГРА</button>
+    </div>
+<div id="startOverlay" class="overlay-start">
+    <button id="startGameBtn" class="start-button">🕵️‍♂️ НАЧАТЬ РАССЛЕДОВАНИЕ</button>
+    <div id="loadingContainer" class="loading-container">
+        <div class="loading-bar">
+            <div id="loadingProgress" class="loading-progress"></div>
+        </div>
+        <div class="loading-text" id="loadingText">ЗАГРУЗКА...</div>
+    </div>
+</div>
+
+<script>
+    (function(){
+        // ---------- ФЛАГ ВКЛЮЧЕНИЯ ЗВУКА ----------
+        let soundEnabled = true;
+        let gameInitialized = false;
+        
+        // Флаг, выбрано ли дело (для управления размытием)
+        let isCaseSelected = false;
+        
+        // ---------- ПЕРЕМЕННЫЕ ДЛЯ ЭФФЕКТА ПЕЧАТИ (только для robotMessage2) ----------
+        let activeTypingTimeout2 = null;
+        
+        // ---------- ПЕРЕМЕННЫЕ ДЛЯ ПЛАВНОГО ЭФФЕКТА НАВЕДЕНИЯ ----------
+        let hoveredClueId = null;
+        let hoverAnimationValue = 0;
+        let hoverAnimationRunning = false;
+        
+        // ---------- ЗВУКИ ----------
+        function playBeep(frequency, duration, volume = 0.2) {
+            if (!soundEnabled) return;
+            try {
+                const AudioContext = window.AudioContext || window.webkitAudioContext;
+                const audioCtx = new AudioContext();
+                const oscillator = audioCtx.createOscillator();
+                const gainNode = audioCtx.createGain();
+                oscillator.connect(gainNode);
+                gainNode.connect(audioCtx.destination);
+                oscillator.frequency.value = frequency;
+                gainNode.gain.value = volume;
+                oscillator.type = 'sine';
+                oscillator.start();
+                gainNode.gain.exponentialRampToValueAtTime(0.00001, audioCtx.currentTime + duration);
+                oscillator.stop(audioCtx.currentTime + duration);
+                setTimeout(() => audioCtx.close().catch(e=>{}), duration * 1000 + 200);
+            } catch(e) {}
+        }
+        
+        function playSuccess() { 
+            playBeep(880, 0.2, 0.15); 
+            setTimeout(() => playBeep(1320, 0.25, 0.12), 150); 
+        }
+        
+        function playError() { 
+            playBeep(440, 0.3, 0.2); 
+            setTimeout(() => playBeep(330, 0.4, 0.18), 200); 
+        }
+        
+        function playGameOver() { playBeep(220, 0.6, 0.25); setTimeout(() => playBeep(165, 1.0, 0.2), 400); }
+        function playVictory() { playBeep(1047, 0.2, 0.1); setTimeout(() => playBeep(1319, 0.2, 0.1), 200); setTimeout(() => playBeep(1568, 0.4, 0.12), 400); }
+        
+        // ---------- ЭФФЕКТ ПИШУЩЕЙ МАШИНКИ ----------
+        function typeMessageLong(element, text, speed = 30, callback) {
+    if (activeTypingTimeout2) clearTimeout(activeTypingTimeout2);
+    
+    // Показываем элемент перед печатью
+    element.classList.remove('none-message');
+    
+    let index = 0;
+    element.innerHTML = '';
+    
+    function typeNext() {
+        if (index < text.length) {
+            element.innerHTML += text.charAt(index);
+            index++;
+            activeTypingTimeout2 = setTimeout(typeNext, speed);
+        } else {
+            activeTypingTimeout2 = null;
+            
+            // Скрываем через 3 секунды после завершения печати
+            setTimeout(() => {
+                // Проверяем, не началась ли новая печать
+                if (!activeTypingTimeout2) {
+                    element.classList.add('none-message');
+                }
+            }, 2000);
+            
+            if (callback) callback();
+        }
+    }
+    typeNext();
+}
+
+// Функция для экстренного скрытия (при смене дела)
+function hideMessageArea2() {
+    const msgDiv = document.getElementById('robotMessage2');
+    msgDiv.classList.add('none-message');
+    if (activeTypingTimeout2) {
+        clearTimeout(activeTypingTimeout2);
+        activeTypingTimeout2 = null;
+    }
+}
+        
+        function setTextInstant(element, text) {
+            if (activeTypingTimeout2) clearTimeout(activeTypingTimeout2);
+            element.innerHTML = text;
+        }
+        
+        // ---------- ЭФФЕКТ ПЕЧАТИ НА КАРТОЧКЕ УЛИКИ ----------
+        let activeCardTypingInterval = null;
+        
+        function animateTypingOnClue(clueId, fullText, onComplete) {
+            if (activeCardTypingInterval) {
+                clearInterval(activeCardTypingInterval);
+                activeCardTypingInterval = null;
+            }
+            let currentText = '';
+            let index = 0;
+            
+            function updateTyping() {
+                if (index < fullText.length) {
+                    currentText += fullText[index];
+                    if (activeMessageClue && activeMessageClue.clue.id === clueId) {
+                        activeMessageClue.displayText = currentText;
+                    }
+                    draw();
+                    index++;
+                } else {
+                    clearInterval(activeCardTypingInterval);
+                    activeCardTypingInterval = null;
+                    if (onComplete) onComplete();
+                }
+            }
+            activeCardTypingInterval = setInterval(updateTyping, 40);
+            updateTyping();
+        }
+        
+        // ---------- ГОЛОСОВАЯ ОЗВУЧКА ----------
+        let speechSynth = window.speechSynthesis;
+        let currentUtterance = null;
+        
+        function stopSpeaking() {
+            if (speechSynth) {
+                speechSynth.cancel();
+            }
+        }
+        
+        function getVoiceForCase(caseNum) {
+            if (!speechSynth) return null;
+            const voices = speechSynth.getVoices();
+            const russianVoices = voices.filter(v => v.lang.startsWith('ru'));
+            if (caseNum === 1) {
+                return russianVoices.find(v => v.name.includes('Female') || v.name.includes('Google') || v.name.includes('Milena')) || russianVoices[0];
+            } else if (caseNum === 2) {
+                return russianVoices.find(v => v.name.includes('Male') || v.name.includes('Yuri')) || russianVoices[0];
+            } else {
+                return russianVoices.find(v => v.name.includes('Female') || v.name.includes('Milena')) || russianVoices[0];
+            }
+        }
+        
+        function cleanTextForSpeech(text) {
+            return text.replace(/[📱🪪📝🌸👍💣✉️🔗🐱🔐😡📸🔞❤️🚩★☆✨⭐️✅❌]/g, '')
+                       .replace(/[0-9]+:/g, '')
+                       .trim();
+        }
+        
+        function speakText(text, rate = 0.9, pitch = 1.0, caseNum = 1) {
+            if (!soundEnabled) return;
+            if (!speechSynth) return;
+            stopSpeaking();
+            let cleanText = cleanTextForSpeech(text);
+            cleanText = cleanText.replace(/вымогатель/g, 'вымогАтель');
+            cleanText = cleanText.replace(/Вымогатель/g, 'ВымогАтель');
+            const utterance = new SpeechSynthesisUtterance(cleanText);
+            utterance.lang = 'ru-RU';
+            utterance.rate = rate;
+            utterance.pitch = pitch;
+            utterance.volume = 1;
+            const voice = getVoiceForCase(caseNum);
+            if (voice) utterance.voice = voice;
+            currentUtterance = utterance;
+            speechSynth.speak(utterance);
+        }
+        
+        function speakCaseIntro(caseNum) {
+            const caseData = casesData[caseNum];
+            if (!caseData) return;
+            let cleanDescription = caseData.description.replace(/[★☆✨⭐️✅❌]/g, '');
+            const introText = `${caseData.shortName}. ${cleanDescription}. Найди ${caseData.totalErrors} опасные улики.`;
+            speakText(introText, 0.85, 1.0, caseNum);
+        }
+        
+        function speakWelcome() {
+            const welcomeText = "Приветствую! Тебе сегодня предстоит раскрыть три преступления. Если готов, то нажми на кнопку.";
+            speakText(welcomeText, 0.85, 1.0, 1);
+        }
+        
+        function toggleSound() {
+            soundEnabled = !soundEnabled;
+            const toggleBtn = document.getElementById('soundToggle');
+            if (soundEnabled) {
+                toggleBtn.innerHTML = '🔊 ВКЛ';
+                toggleBtn.style.background = "#2b2b1f";
+                playBeep(660, 0.15, 0.1);
+            } else {
+                toggleBtn.innerHTML = '🔇 ВЫКЛ';
+                toggleBtn.style.background = "#4a2a2a";
+                stopSpeaking();
+            }
+        }
+        
+        function showLoadingAndStart(callback) {
+            const startBtn = document.getElementById('startGameBtn');
+            const loadingContainer = document.getElementById('loadingContainer');
+            const loadingProgress = document.getElementById('loadingProgress');
+            const loadingText = document.getElementById('loadingText');
+            startBtn.style.display = 'none';
+            loadingContainer.style.display = 'flex';
+            let progress = 0;
+            const interval = setInterval(() => {
+                progress += 2;
+                if (progress <= 100) {
+                    loadingProgress.style.width = progress + '%';
+                    loadingText.innerText = `ЗАГРУЗКА... ${progress}%`;
+                }
+                if (progress >= 100) {
+                    clearInterval(interval);
+                    loadingText.innerText = 'ГОТОВО!';
+                    setTimeout(() => { callback(); }, 500);
+                }
+            }, 30);
+        }
+        
+        // Анимация перемещения ПРАВИЛЬНОЙ улики в правую часть
+        function animateClueToCorner(clue, targetIndex, callback) {
+            const startX = clue.x;
+            const startY = clue.y;
+            const targetX = canvas.width - 260;
+            const targetY = 110 + targetIndex * 105;
+            const startTime = performance.now();
+            const duration = 500;
+            function animate(currentTime) {
+                const elapsed = currentTime - startTime;
+                const progress = Math.min(1, elapsed / duration);
+                const easeProgress = 1 - Math.pow(1 - progress, 2);
+                clue.animX = startX + (targetX - startX) * easeProgress;
+                clue.animY = startY + (targetY - startY) * easeProgress;
+                if (progress < 1) {
+                    requestAnimationFrame(animate);
+                } else {
+                    delete clue.animX;
+                    delete clue.animY;
+                    clue.isMoving = false;
+                    if (callback) callback();
+                }
+                draw();
+            }
+            requestAnimationFrame(animate);
+        }
+        
+        // Анимация исчезновения НЕПРАВИЛЬНОЙ улики
+        function animateClueDisappear(clue, callback) {
+            clue.isDisappearing = true;
+            let opacity = 1;
+            let scale = 1;
+            const startTime = performance.now();
+            const duration = 300;
+            
+            function animate(currentTime) {
+                const elapsed = currentTime - startTime;
+                const progress = Math.min(1, elapsed / duration);
+                opacity = 1 - progress;
+                scale = 1 - progress * 0.3;
+                clue.disappearOpacity = opacity;
+                clue.disappearScale = scale;
+                draw();
+                if (progress < 1) {
+                    requestAnimationFrame(animate);
+                } else {
+                    delete clue.isDisappearing;
+                    delete clue.disappearOpacity;
+                    delete clue.disappearScale;
+                    if (callback) callback();
+                }
+            }
+            requestAnimationFrame(animate);
+        }
+        
+        function startGame() {
+            const overlay = document.getElementById('startOverlay');
+            const canvasEl = document.getElementById('gameCanvas');
+            
+            canvasEl.classList.add('init-hidden');
+            
+            overlay.style.opacity = '0';
+            setTimeout(() => {
+                overlay.style.display = 'none';
+                gameInitialized = true;
+                fullReset();
+                
+                setTimeout(() => {
+                    canvasEl.classList.remove('init-hidden');
+                    canvasEl.classList.add('slide-in');
+                    setTimeout(() => {
+                        canvasEl.classList.remove('slide-in');
+                    }, 500);
+                }, 100);
+            }, 300);
+        }
+        
+        function vibrate(pattern) {
+            if (window.navigator && window.navigator.vibrate) {
+                window.navigator.vibrate(pattern);
+            }
+        }
+        
+        function setCanvasBlur(blur) {
+            const canvasEl = document.getElementById('gameCanvas');
+            if (blur) {
+                canvasEl.classList.add('canvas-blur');
+            } else {
+                canvasEl.classList.remove('canvas-blur');
+            }
+        }
+        
+        function loadCaseData(caseNum) {
+            const caseData = casesData[caseNum];
+            if (!caseData) return;
+            
+            setCanvasBlur(false);
+            isCaseSelected = true;
+            
+            currentCase = caseNum;
+            totalErrorsInCase = caseData.totalErrors;
+            found = 0;
+            waitingForVerdict = false;
+            caseCompleted = false;
+            gameActive = true;
+            lives = 3;
+            collectedClues = [];
+            clues = JSON.parse(JSON.stringify(caseData.clues));
+            
+            updateUI();
+                document.getElementById('caseName').innerHTML = caseData.shortName;
+            highlightActiveCaseButton(caseNum);
+            setTextInstant(document.getElementById('robotMessage'), `🔍 Найди ${totalErrorsInCase} опасные улики!`);
+            typeMessageLong(document.getElementById('robotMessage2'), `📁 ${caseData.shortName}. ${caseData.description}`, 30);
+            draw();
+            
+            const oldPanel = document.getElementById('verdictPanel');
+            if (oldPanel) oldPanel.remove();
+            
+            if (soundEnabled) speakCaseIntro(caseNum);
+        }
+        
+        function switchCaseWithAnimation(caseNum) {
+            const canvasEl = document.getElementById('gameCanvas');
+            setCanvasBlur(false);
+            canvasEl.classList.add('slide-out');
+            setTimeout(() => {
+                loadCaseData(caseNum);
+                canvasEl.classList.remove('slide-out');
+                canvasEl.classList.add('slide-in');
+                setTimeout(() => {
+                    canvasEl.classList.remove('slide-in');
+                }, 500);
+            }, 500);
+        }
+        
+        function fullReset() {
+            currentCase = 1;
+            lives = 3;
+            found = 0;
+            totalErrorsInCase = 3;
+            caseCompleted = false;
+            waitingForVerdict = false;
+            gameActive = true;
+            collectedClues = [];
+            const caseData = casesData[1];
+            clues = JSON.parse(JSON.stringify(caseData.clues));
+            updateUI();
+            document.getElementById('caseName').innerHTML = caseData.shortName;
+            highlightActiveCaseButton(null);
+            isCaseSelected = false;
+            setCanvasBlur(true);
+            setTextInstant(document.getElementById('robotMessage'), "👮‍♂️ Выберите дело из списка слева");
+            typeMessageLong(document.getElementById('robotMessage2'), "📁 Выберите дело, чтобы начать расследование", 30);
+            draw();
+            const oldPanel = document.getElementById('verdictPanel');
+            if(oldPanel) oldPanel.remove();
+        }
+        
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        
+        let currentCase = 1;
+        let found = 0;
+        let totalErrorsInCase = 3;
+        let lives = 3;
+        let gameActive = true;
+        let waitingForVerdict = false;
+        let caseCompleted = false;
+        let clues = [];
+        let collectedClues = [];
+        let shakeClueId = null;
+        let activeMessageClue = null;
+        let messageTimeout = null;
+        
+        const casesData = {
+            1: {
+                shortName: "Дело №1: Похищенный аккаунт",
+                name: "Похищенный аккаунт в соцсетях",
+                description: "У 12-летней Ани взломали страницу. Найди 3 ошибки безопасности, которые она совершила.",
+                background: "#2b3b2c",
+                totalErrors: 3,
+                clues: [
+                    { id: "c1", text: "📱 Скинь код подтверждения!", x: 50, y: 120, w: 230, h: 90, dangerous: true, found: false, collected: false, hint: "Нельзя отправлять код подтверждения незнакомцам — это фишинг!", pinColor: "#c0a060", pinX: -15, pinY: 15 },
+                    { id: "c2", text: "📸  Фото школьного пропуска", x: 320, y: 250, w: 230, h: 90, dangerous: true, found: false, collected: false, hint: "Личные документы нельзя выкладывать в открытый доступ!", pinColor: "#60c0a0", pinX: -20, pinY: 10 },
+                    { id: "c3", text: "📝 Пароль: Аня2009", x: 400, y: 380, w: 230, h: 90, dangerous: true, found: false, collected: false, hint: "Слишком простой пароль — имя и год рождения легко подобрать!", pinColor: "#c060a0", pinX: -10, pinY: 20 },
+                    { id: "c4", text: "🌸 Какой любимый цвет?", x: 50, y: 400, w: 230, h: 90, dangerous: false, found: false, collected: false, hint: "Это безопасный опрос — здесь нет ссылок и просьб о данных", pinColor: "#a0c060", pinX: -18, pinY: 12 },
+                    { id: "c5", text: "👍 youtube.com/котики", x: 330, y: 120, w: 230, h: 90, dangerous: false, found: false, collected: false, hint: "Это безопасный сайт — известный видеохостинг", pinColor: "#60a0c0", pinX: -22, pinY: 18 }
+                ],
+                verdictOptions: [
+                    { name: "Аня", correct: true, feedback: "✔️ Верно! Аня сама нарушила правила: выложила фото пропуска, использовала простой пароль и повелась на фишинг." },
+                    { name: "Хакер", correct: false, feedback: "❌ НЕТ! Хакер — преступник, но вина начинается с ошибок самой Ани." },
+                    { name: "Одноклассники", correct: false, feedback: "❌ Нет, друзья здесь ни при чём." }
+                ]
+            },
+            2: {
+                shortName: "Дело №2: Вирус-вымогатель",
+                name: "Вирус, заблокировавший компьютер",
+                description: "Дима скачал файл, и все документы исчезли. Найди 3 опасные улики.",
+                background: "#2c3e4e",
+                totalErrors: 3,
+                clues: [
+                    { id: "d1", text: "💣 бесплатная_игра.exe", x: 50, y: 120, w: 240, h: 90, dangerous: true, found: false, collected: false, hint: "Файлы .exe от незнакомцев могут содержать вирусы!", pinColor: "#c0a060", pinX: -15, pinY: 15 },
+                    { id: "d2", text: "✉️ Мама: скинь пароль", x: 350, y: 250, w: 240, h: 90, dangerous: true, found: false, collected: false, hint: "Даже родные не должны просить пароль в сообщениях — аккаунт могут взломать!", pinColor: "#60c0a0", pinX: -20, pinY: 10 },
+                    { id: "d3", text: "🔗 Перейди по ссылке, приз!", x: 450, y: 380, w: 240, h: 90, dangerous: true, found: false, collected: false, hint: "Подозрительные ссылки ведут на фишинговые сайты!", pinColor: "#c060a0", pinX: -12, pinY: 22 },
+                    { id: "d4", text: "🐱 Фото котика", x: 50, y: 400, w: 230, h: 90, dangerous: false, found: false, collected: false, hint: "Обычное фото без ссылок и просьб — безопасно", pinColor: "#a0c060", pinX: -18, pinY: 14 },
+                    { id: "d5", text: "🔐 Включи двухфакторку", x: 430, y: 120, w: 240, h: 90, dangerous: false, found: false, collected: false, hint: "Двухфакторная аутентификация — это правильный способ защиты!", pinColor: "#60a0c0", pinX: -25, pinY: 16 }
+                ],
+                verdictOptions: [
+                    { name: "Дима", correct: true, feedback: "✔️ Верно! Дима сам скачал вирус и передал пароль в переписке." },
+                    { name: "Вирус", correct: false, feedback: "❌ Вирус — инструмент, а виноват тот, кто его запустил." },
+                    { name: "Антивирус", correct: false, feedback: "❌ Антивирус тут ни при чём, Дима его не использовал." }
+                ]
+            },
+            3: {
+                shortName: "Дело №3: Кибербуллинг",
+                name: "Травля в соцсетях и кража личности",
+                description: "Одноклассники создали фейковый аккаунт Кати и оскорбляют её. Найди 3 нарушения.",
+                background: "#4a2a2a",
+                totalErrors: 3,
+                clues: [
+                    { id: "e1", text: "😡 Оскорбления в комментариях", x: 50, y: 120, w: 260, h: 90, dangerous: true, found: false, collected: false, hint: "Кибербуллинг — это уголовное нарушение!", pinColor: "#c0a060", pinX: -15, pinY: 15 },
+                    { id: "e2", text: "📸 Фото Кати без спроса", x: 350, y: 250, w: 260, h: 90, dangerous: true, found: false, collected: false, hint: "Публикация чужих фото без разрешения нарушает закон о персональных данных", pinColor: "#60c0a0", pinX: -22, pinY: 12 },
+                    { id: "e3", text: "🔞 Фейковый аккаунт", x: 450, y: 380, w: 250, h: 90, dangerous: true, found: false, collected: false, hint: "Создавать фейковый аккаунт чужого человека — незаконно!", pinColor: "#c060a0", pinX: -18, pinY: 20 },
+                    { id: "e4", text: "❤️ Поддержка друга", x: 50, y: 400, w: 240, h: 90, dangerous: false, found: false, collected: false, hint: "Поддерживать жертву кибербуллинга — правильный поступок", pinColor: "#a0c060", pinX: -20, pinY: 14 },
+                    { id: "e5", text: "🚩 Пожаловаться модератору", x: 420, y: 120, w: 250, h: 90, dangerous: false, found: false, collected: false, hint: "Жалоба модератору — верный способ остановить травлю", pinColor: "#60a0c0", pinX: -16, pinY: 18 }
+                ],
+                verdictOptions: [
+                    { name: "Катя", correct: false, feedback: "❌ Катя — жертва, она не нарушала правила." },
+                    { name: "Одноклассники", correct: true, feedback: "✔️ Верно! Именно одноклассники создали фейк и травили Катю." },
+                    { name: "Модератор", correct: false, feedback: "❌ Модератор не виноват, он не видел нарушения." }
+                ]
+            }
+        };
+        
+        function loadCase(caseNum, skipAutoSave = false, playVoice = true) {
+            switchCaseWithAnimation(caseNum);
+        }
+        
+        function highlightActiveCaseButton(caseNum) {
+            document.querySelectorAll('.case-btn').forEach(btn => {
+                if(caseNum !== null && btn.getAttribute('data-case') == caseNum) {
+                    btn.classList.add('active');
+                } else {
+                    btn.classList.remove('active');
+                }
+            });
+        }
+        
+        function updateUI() {
+            document.getElementById('foundCount').innerText = found;
+            document.getElementById('totalErrors').innerText = totalErrorsInCase;
+            document.getElementById('lives').innerText = lives;
+        }
+        
+        function setRobotMessageLong(msg, isError = false) {
+            const msgDiv = document.getElementById('robotMessage2');
+            msgDiv.style.background = isError ? "#6a2a2a" : "#2b2b1f";
+            typeMessageLong(msgDiv, msg, 30);
+            draw();
+        }
+        
+        function setRobotMessageShort(msg, isError = false) {
+            const msgDiv = document.getElementById('robotMessage');
+            msgDiv.style.background = isError ? "#6a2a2a" : "#2b2b1f";
+            setTextInstant(msgDiv, msg);
+            draw();
+        }
+        
+        function showClueMessage(clue, isDangerous) {
+            if (activeCardTypingInterval) {
+                clearInterval(activeCardTypingInterval);
+                activeCardTypingInterval = null;
+            }
+            activeMessageClue = { 
+                clue, 
+                isDangerous, 
+                fullText: clue.hint,
+                displayText: ''
+            };
+            animateTypingOnClue(clue.id, clue.hint, () => {
+                if (messageTimeout) clearTimeout(messageTimeout);
+                messageTimeout = setTimeout(() => {
+                    activeMessageClue = null;
+                    draw();
+                }, 2500);
+            });
+            draw();
+        }
+        
+        function collectCorrectClueWithAnimation(clue) {
+            const targetIndex = collectedClues.length;
+            const targetX = canvas.width - 260;
+            const targetY = 110 + targetIndex * 105;
+            
+            const originalW = clue.w;
+            const originalH = clue.h;
+            
+            clue.isMoving = true;
+            
+            collectedClues.push({
+                id: clue.id,
+                text: clue.text,
+                dangerous: clue.dangerous,
+                hint: clue.hint,
+                x: clue.x,
+                y: clue.y,
+                w: originalW,
+                h: originalH,
+                pinColor: clue.pinColor,
+                pinX: clue.pinX,
+                pinY: clue.pinY,
+                isMoving: true
+            });
+            
+            const index = clues.findIndex(c => c.id === clue.id);
+            if (index !== -1) clues[index].found = true;
+            
+            const collectedClue = collectedClues[collectedClues.length - 1];
+            animateClueToCorner(collectedClue, targetIndex, () => {
+                collectedClue.x = targetX;
+                collectedClue.y = targetY;
+                collectedClue.w = originalW;
+                collectedClue.h = originalH;
+                collectedClue.isMoving = false;
+                draw();
+            });
+        }
+        
+        function removeWrongClueWithAnimation(clue) {
+            const index = clues.findIndex(c => c.id === clue.id);
+            if (index !== -1) {
+                animateClueDisappear(clue, () => {
+                    clues[index].found = true;
+                    draw();
+                });
+            }
+        }
+        
+        function shakeClue(id) { 
+            shakeClueId = id; 
+            setTimeout(() => { if(shakeClueId === id) shakeClueId = null; }, 300); 
+            draw(); 
+        }
+        
+        function handleClueClick(clue) {
+            if(!gameActive || waitingForVerdict || caseCompleted) return;
+            if(clue.found) {
+                setRobotMessageShort("🔍 Ты уже нашёл эту улику!", false);
+                if (soundEnabled) playError();
+                return;
+            }
+            
+            showClueMessage(clue, clue.dangerous);
+            
+            if(clue.dangerous) {
+                found++;
+                updateUI();
+                setRobotMessageShort(`✅ Верно!`, false);
+                setRobotMessageLong(`✅ Верно! ${clue.hint}`, false);
+                  // Останавливаем предыдущую речь
+    if (speechSynth) speechSynth.cancel();
+    
+    if (soundEnabled) {
+        speakText(`✅ Верно! ${clue.hint}`, currentCase);
+    }
+                vibrate(50);
+                collectCorrectClueWithAnimation(clue);
+                
+                if(found >= totalErrorsInCase) {
+                    caseCompleted = true;
+                    waitingForVerdict = true;
+                    // Динамическая задержка в зависимости от длины текста
+        const hintLength = clue.hint.length;
+        const speechDuration = Math.max(2000, hintLength * 70);
+                    setTimeout(() => {
+                        setRobotMessageLong("🔎 Все улики найдены! Теперь выбери виновного.", false);
+                        drawVerdictButtons(casesData[currentCase].verdictOptions);
+                    }, speechDuration + 100);
+                }
+            } else {
+                lives--;
+                updateUI();
+                setRobotMessageShort(`❌ ОШИБКА! −1 жизнь`, true);
+                setRobotMessageLong(`❌ ОШИБКА! ${clue.hint} −1 жизнь`, true);
+                if (soundEnabled) playError();
+                vibrate(200);
+                removeWrongClueWithAnimation(clue);
+                
+                if(lives <= 0) {
+                    gameActive = false;
+                    setTimeout(() => {
+                        setRobotMessageLong("💀 Игра окончена... Нажми «Новая игра».", true);
+                        if (soundEnabled) playGameOver();
+                        vibrate([300, 100, 300]);
+                    }, 400);
+                }
+            }
+        }
+        
+        function drawVerdictButtons(options) {
+            const oldPanel = document.getElementById('verdictPanel');
+            if(oldPanel) oldPanel.remove();
+            const panel = document.createElement('div');
+            panel.id = "verdictPanel";
+            panel.style.position = "absolute";
+            panel.style.top = "50%";
+            panel.style.left = "50%";
+            panel.style.transform = "translate(-50%, -50%)";
+            panel.style.backgroundColor = "#1e2f2fe6";
+            panel.style.padding = "20px 30px";
+            panel.style.borderRadius = "60px";
+            panel.style.display = "flex";
+            panel.style.gap = "15px";
+            panel.style.zIndex = "999";
+            panel.style.backdropFilter = "blur(12px)";
+            panel.style.border = "3px solid gold";
+            panel.style.flexWrap = "wrap";
+            panel.style.justifyContent = "center";
+            options.forEach(opt => {
+                const btn = document.createElement('button');
+                btn.innerText = opt.name;
+                btn.style.fontSize = "1.3rem";
+                btn.style.padding = "10px 25px";
+                btn.style.touchAction = "manipulation";
+                btn.style.cursor = "pointer";
+                btn.onclick = () => {
+                    if(opt.correct) {
+                        setRobotMessageLong(opt.feedback, false);
+                        if (soundEnabled) playVictory();
+                        vibrate([100, 50, 100]);
+                        if (soundEnabled) speakText(opt.feedback, 0.9, 1.0, currentCase);
+                        setTimeout(() => {
+                            document.getElementById('verdictPanel')?.remove();
+                            setRobotMessageLong(`🎉 Ты раскрыл ${casesData[currentCase].shortName}! Выбери следующее дело слева.`, false);
+                        }, 5000);
+                    } else {
+                        setRobotMessageLong(opt.feedback, true);
+                        if (soundEnabled) playError();
+                        vibrate(300);
+                        if (soundEnabled) speakText(opt.feedback, 0.9, 1.0, currentCase);
+                        lives--;
+                        updateUI();
+                        if(lives <= 0) {
+                            gameActive = false;
+                            setRobotMessageLong("💀 Поражение... Перезапусти или выбери другое дело.", true);
+                            if (soundEnabled) playGameOver();
+                            vibrate([400, 200, 400]);
+                            document.getElementById('verdictPanel')?.remove();
+                        }
+                    }
+                    draw();
+                };
+                panel.appendChild(btn);
+            });
+            const canvasContainer = canvas.parentElement;
+            canvasContainer.style.position = "relative";
+            canvasContainer.appendChild(panel);
+        }
+        
+        function resetGame() {
+            fullReset();
+        }
+        
+        function startHoverAnimation() {
+            if (hoverAnimationRunning) return;
+            hoverAnimationRunning = true;
+            
+            function animateHover() {
+                const target = hoveredClueId ? 1 : 0;
+                hoverAnimationValue = hoverAnimationValue * 0.85 + target * 0.15;
+                draw();
+                if (Math.abs(hoverAnimationValue - target) > 0.001) {
+                    requestAnimationFrame(animateHover);
+                } else {
+                    hoverAnimationValue = target;
+                    draw();
+                    hoverAnimationRunning = false;
+                }
+            }
+            requestAnimationFrame(animateHover);
+        }
+        
+        function drawClue(clue, isCollected = false, index = 0) {
+            let x = clue.x, y = clue.y, w = clue.w, h = clue.h;
+            
+            // Для исчезающей улики
+            let opacity = 1;
+            let scale = 1;
+            if (clue.isDisappearing) {
+                opacity = clue.disappearOpacity || 0;
+                scale = clue.disappearScale || 0.7;
+                if (opacity <= 0) return;
+            }
+            
+            if (clue.animX !== undefined) {
+                x = clue.animX;
+                y = clue.animY;
+            } else if (isCollected) {
+                x = canvas.width - 260;
+                y = 110 + index * 105;
+                w = clue.w;
+                h = clue.h;
+            }
+            
+            let isHovered = (hoveredClueId === clue.id && !isCollected && !clue.animX && !clue.found && !clue.isDisappearing);
+            let hoverFactor = isHovered ? hoverAnimationValue : 0;
+            let hoverScale = 1 + (0.05 * hoverFactor);
+            let shadowIntensity = 4 + (8 * hoverFactor);
+            let offsetX = -w * 0.025 * hoverFactor;
+            let offsetY = -h * 0.025 * hoverFactor;
+            
+            ctx.save();
+            
+            // Применяем масштаб для исчезновения
+            let finalScale = scale * hoverScale;
+            ctx.translate(x + w/2 + offsetX, y + h/2 + offsetY);
+            ctx.scale(finalScale, finalScale);
+            ctx.translate(-(x + w/2), -(y + h/2));
+            
+            if (opacity < 1) {
+                ctx.globalAlpha = opacity;
+            }
+            
+            ctx.shadowBlur = shadowIntensity;
+            ctx.shadowOffsetX = 2;
+            ctx.shadowOffsetY = 2;
+            ctx.shadowColor = "rgba(0,0,0,0.3)";
+            
+            ctx.fillStyle = "#fffef0";
+            ctx.beginPath();
+            ctx.moveTo(x + 12, y);
+            ctx.lineTo(x + w - 12, y);
+            ctx.quadraticCurveTo(x + w, y, x + w, y + 12);
+            ctx.lineTo(x + w, y + h - 12);
+            ctx.quadraticCurveTo(x + w, y + h, x + w - 12, y + h);
+            ctx.lineTo(x + 12, y + h);
+            ctx.quadraticCurveTo(x, y + h, x, y + h - 12);
+            ctx.lineTo(x, y + 12);
+            ctx.quadraticCurveTo(x, y, x + 12, y);
+            ctx.fill();
+            
+            // Канцелярская кнопка (не рисуем для исчезающих)
+            if (!clue.isMoving && !clue.animX && !clue.isDisappearing) {
+                let pinX, pinY;
+                if (isCollected) {
+                    pinX = x + w - 22;
+                    pinY = y + 18;
+                } else {
+                    pinX = x + w - 18;
+                    pinY = y - 5;
+                    if (clue.pinX !== undefined) pinX = x + w + clue.pinX;
+                    if (clue.pinY !== undefined) pinY = y + clue.pinY;
+                }
+                ctx.font = "26px 'Segoe UI Emoji', 'Apple Color Emoji', 'Noto Color Emoji'";
+                ctx.fillStyle = "#000000";
+                ctx.fillText("📌", pinX, pinY);
+            }
+            
+            ctx.shadowBlur = 0;
+            ctx.shadowOffsetX = 0;
+            ctx.shadowOffsetY = 0;
+            ctx.fillStyle = "#2d2b1f";
+            ctx.font = "bold 20px 'Roboto', sans-serif";
+            
+            let text = clue.text;
+            let maxWidth = w - 25;
+            let words = text.split(' ');
+            let lines = [];
+            let currentLine = '';
+            for (let i = 0; i < words.length; i++) {
+                let testLine = currentLine + (currentLine ? ' ' : '') + words[i];
+                if (ctx.measureText(testLine).width > maxWidth && currentLine) {
+                    lines.push(currentLine);
+                    currentLine = words[i];
+                } else {
+                    currentLine = testLine;
+                }
+            }
+            lines.push(currentLine);
+            let startY = y + 35;
+            let lineHeight = 20;
+            for (let i = 0; i < lines.length && i < 3; i++) {
+                ctx.fillText(lines[i], x + 10, startY + i * lineHeight);
+            }
+            
+            if (activeMessageClue && activeMessageClue.clue.id === clue.id && !isCollected && !clue.animX && !clue.isDisappearing) {
+                ctx.fillStyle = activeMessageClue.isDangerous ? "rgba(42, 107, 42, 0.9)" : "rgba(139, 58, 58, 0.9)";
+                ctx.fillRect(x + 5, y + h - 35, w - 10, 30);
+                ctx.fillStyle = "#ffffff";
+                ctx.font = "bold 11px 'Roboto', sans-serif";
+                let msgText = activeMessageClue.displayText || activeMessageClue.fullText || '';
+                if (ctx.measureText(msgText).width > w - 20) {
+                    let truncated = msgText;
+                    while (ctx.measureText(truncated + '...').width > w - 20 && truncated.length > 0) {
+                        truncated = truncated.slice(0, -1);
+                    }
+                    msgText = truncated + '...';
+                }
+                ctx.fillText(msgText, x + 10, y + h - 15);
+            }
+            
+            if (isCollected && !clue.animX && !clue.isDisappearing) {
+                ctx.fillStyle = clue.dangerous ? "#2a6b2a" : "#8b3a3a";
+                ctx.font = "bold 10px 'Roboto', sans-serif";
+                ctx.fillText(clue.dangerous ? "ОПАСНО" : "БЕЗОПАСНО", x + 10, y + h - 8);
+            }
+            
+            ctx.restore();
+        }
+        
+        function draw() {
+            if(!ctx) return;
+            const caseData = casesData[currentCase] || { background: "#2b3b2c" };
+            
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = "#b87c4f";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.strokeStyle = "#9b6a3a";
+            ctx.lineWidth = 1;
+            for (let i = 0; i < 20; i++) {
+                ctx.beginPath();
+                ctx.moveTo(0, i * 40);
+                ctx.lineTo(canvas.width, i * 40);
+                ctx.stroke();
+            }
+            ctx.fillStyle = "#f0e0b0";
+            ctx.shadowBlur = 3;
+            ctx.fillRect(canvas.width/2 - 200, 15, 400, 40);
+            ctx.fillStyle = "#5a3a1a";
+            ctx.font = "bold 22px 'Roboto', sans-serif";
+            ctx.textAlign = "center";
+            ctx.fillText("📋 ДОСКА УЛИК", canvas.width/2, 45);
+            ctx.textAlign = "left";
+            ctx.shadowBlur = 0;
+            clues.forEach(clue => {
+                if(clue.found && !clue.isDisappearing) return;
+                let x = clue.x, y = clue.y;
+                let offsetX = (shakeClueId === clue.id) ? (Math.sin(Date.now() * 0.05) * 4) : 0;
+                let offsetY = (shakeClueId === clue.id) ? (Math.cos(Date.now() * 0.05) * 2) : 0;
+                const originalX = clue.x;
+                const originalY = clue.y;
+                clue.x = x + offsetX;
+                clue.y = y + offsetY;
+                drawClue(clue, false);
+                clue.x = originalX;
+                clue.y = originalY;
+            });
+            if (collectedClues.length > 0) {
+                ctx.fillStyle = "#2b2b1fcc";
+                ctx.fillRect(canvas.width - 280, 65, 260, collectedClues.length * 105 + 25);
+                ctx.fillStyle = "#ffecb3";
+                ctx.font = "bold 14px 'Roboto', sans-serif";
+                ctx.fillText("📦 СОБРАНО:", canvas.width - 270, 90);
+                for (let i = 0; i < collectedClues.length; i++) {
+                    drawClue(collectedClues[i], true, i);
+                }
+            }
+        }
+        
+        function handleMouseMove(e) {
+            if(!gameActive || waitingForVerdict || !gameInitialized) return;
+            const rect = canvas.getBoundingClientRect();
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
+            let clientX, clientY;
+            if(e.touches) {
+                clientX = e.touches[0].clientX;
+                clientY = e.touches[0].clientY;
+            } else {
+                clientX = e.clientX;
+                clientY = e.clientY;
+            }
+            const mouseX = (clientX - rect.left) * scaleX;
+            const mouseY = (clientY - rect.top) * scaleY;
+            
+            let newHovered = null;
+            for(let clue of clues) {
+                if(!clue.found && !clue.isDisappearing && mouseX > clue.x && mouseX < clue.x+clue.w && mouseY > clue.y && mouseY < clue.y+clue.h) {
+                    newHovered = clue.id;
+                    break;
+                }
+            }
+            if (hoveredClueId !== newHovered) {
+                hoveredClueId = newHovered;
+                startHoverAnimation();
+            }
+        }
+        
+        function handleCanvasClick(e) {
+            if(!gameActive || waitingForVerdict || !gameInitialized) return;
+            if (!isCaseSelected) {
+                setRobotMessageShort("👮‍♂️ Сначала выбери дело из списка слева!", false);
+                return;
+            }
+            const rect = canvas.getBoundingClientRect();
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
+            let clientX, clientY;
+            if(e.touches) {
+                clientX = e.touches[0].clientX;
+                clientY = e.touches[0].clientY;
+                e.preventDefault();
+            } else {
+                clientX = e.clientX;
+                clientY = e.clientY;
+            }
+            const mouseX = (clientX - rect.left) * scaleX;
+            const mouseY = (clientY - rect.top) * scaleY;
+            for(let clue of clues) {
+                if(!clue.found && !clue.isDisappearing && mouseX > clue.x && mouseX < clue.x+clue.w && mouseY > clue.y && mouseY < clue.y+clue.h) {
+                    handleClueClick(clue);
+                    break;
+                }
+            }
+        }
+        
+        canvas.addEventListener('click', handleCanvasClick);
+        canvas.addEventListener('touchstart', (e) => { e.preventDefault(); handleCanvasClick(e); }, { passive: false });
+        canvas.addEventListener('mousemove', handleMouseMove);
+        canvas.addEventListener('mouseleave', () => {
+            hoveredClueId = null;
+            startHoverAnimation();
+        });
+        
+        document.getElementById('mobileResetBtn').addEventListener('click', () => { fullReset(); });
+        
+        document.getElementById('voiceIntroBtn').addEventListener('click', () => {
+            if (soundEnabled && gameInitialized && isCaseSelected) speakCaseIntro(currentCase);
+            else if (!soundEnabled) setRobotMessageShort("🔇 Звук выключен. Включи звук кнопкой справа.", false);
+            else setRobotMessageShort("🔊 Сначала выберите дело из списка слева!", false);
+        });
+        
+        const soundToggleBtn = document.getElementById('soundToggle');
+        if (soundToggleBtn) soundToggleBtn.addEventListener('click', toggleSound);
+        
+        document.querySelectorAll('.case-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                if (!gameInitialized) return;
+                const caseNum = parseInt(btn.getAttribute('data-case'));
+                if(caseNum && casesData[caseNum]) {
+                    loadCase(caseNum, false, true);
+                }
+            });
+        });
+        
+        if (speechSynth) speechSynth.onvoiceschanged = () => {};
+        
+        const startOverlay = document.getElementById('startOverlay');
+        const startBtn = document.getElementById('startGameBtn');
+        startBtn.addEventListener('click', () => {
+            showLoadingAndStart(() => { startGame(); });
+        });
+        
+        setTimeout(() => {
+            if (soundEnabled) speakWelcome();
+        }, 500);
+        
+        function animate() { draw(); requestAnimationFrame(animate); }
+        animate();
+    })();
+</script>
+</body>
+</html>
